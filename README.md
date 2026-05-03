@@ -57,6 +57,7 @@ python app.py
 Open your browser at `http://localhost:5001`.
 
 ---
+This is a code bundle for CloudNet Sentinel Dashboard. The original project is available at https://cloudnet-sentinel.onrender.com
 
 ## 📊 Sample Findings
 🚨 **ATTACK PATH DETECTED**
