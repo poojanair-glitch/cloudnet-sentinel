@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Establishing Connection | CloudNet Sentinel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg: #0a0f1d;
+            --accent: #4299e1;
+            --text: #f7fafc;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(66, 153, 225, 0.03) 0%, transparent 70%),
+                linear-gradient(rgba(66, 153, 225, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(66, 153, 225, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 50px 50px, 50px 50px;
+        }
+
+        .loader-container { text-align: center; width: 100%; max-width: 400px; padding: 20px; }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            letter-spacing: -1px;
+            justify-content: center;
+        }
+        .logo i { color: var(--accent); }
+
+        .percentage {
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #9f7aea);
+            width: 0%;
+            transition: width 0.05s linear;
+            box-shadow: 0 0 20px rgba(66, 153, 225, 0.4);
+        }
+
+        .status-box { height: 24px; }
+        .status-text {
+            font-size: 0.9rem;
+            color: #a0aec0;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .scanning-line {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.3;
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanning-line"></div>
+    
+    <div class="loader-container">
+        <div class="logo">
+            <i class="bi bi-shield-lock-fill"></i>
+            <span>SENTINEL</span>
+        </div>
+        
+        <div class="percentage" id="percent">0%</div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="bar"></div>
+        </div>
+        
+        <div class="status-box">
+            <div class="status-text" id="status">Initializing Neural Engine...</div>
+        </div>
+    </div>
+
+    <script>
+        const percentEl = document.getElementById('percent');
+        const barEl = document.getElementById('bar');
+        const statusEl = document.getElementById('status');
+        
+        const statuses = [
+            "Initializing Neural Engine...",
+            "Establishing AWS Handshake...",
+            "Mapping VPC Topology...",
+            "Analyzing IAM Policy Graphs...",
+            "Scanning S3 Exposure Vectors...",
+            "Correlating Attack Paths...",
+            "Finalizing Security Posture..."
+        ];
+
+        let currentPercent = 0;
+        const totalTime = 4000; // 4 seconds for a nice smooth feel
+        const intervalTime = 40; // update every 40ms
+        const step = 100 / (totalTime / intervalTime);
+
+        const timer = setInterval(() => {
+            currentPercent += step;
+            if (currentPercent >= 100) {
+                currentPercent = 100;
+                clearInterval(timer);
+                setTimeout(() => {
+                    window.location.href = "/dashboard";
+                }, 500);
+            }
+            
+            const p = Math.floor(currentPercent);
+            percentEl.innerText = p + "%";
+            barEl.style.width = p + "%";
+            
+            // Update status text based on progress
+            const statusIdx = Math.min(
+                Math.floor((p / 100) * statuses.length),
+                statuses.length - 1
+            );
+            statusEl.innerText = statuses[statusIdx];
+        }, intervalTime);
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+{
+    "paths": [],
+    "risk_score": 0,
+    "severity": "LOW",
+    "cost_impact": {
+        "estimated_monthly_impact_inr": 0,
+        "count": 0
+    },
+    "suggestions": [
+        {
+            "title": "Continuous Monitoring",
+            "description": "Keep monitoring your infrastructure for any new public resources or permissive IAM roles.",
+            "icon": "\ud83d\udcc8"
+        }
+    ],
+    "ai_insights": "Based on the analysis, 0 potential attack paths were discovered. The most critical issue is the link between public EC2 instances and Administrator IAM roles. I recommend prioritizing the restriction of Security Group rules for these instances.",
+    "data": {
+        "ec2": [],
+        "security_groups": [
+            {
+                "id": "sg-0375f8bc8ad2a6f14",
+                "open_to_world": true
+            },
+            {
+                "id": "sg-020de12ab19de9b81",
+                "open_to_world": true
+            },
+            {
+                "id": "sg-0b8e063f5bebc48c7",
+                "open_to_world": false
+            }
+        ],
+        "s3": [],
+        "iam": [
+            {
+                "name": "AWSServiceRoleForAmazonElasticFileSystem",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/elasticfilesystem.amazonaws.com/AWSServiceRoleForAmazonElasticFileSystem",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForAPIGateway",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/ops.apigateway.amazonaws.com/AWSServiceRoleForAPIGateway",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForAutoScaling",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForBackup",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/backup.amazonaws.com/AWSServiceRoleForBackup",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForElasticLoadBalancing",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForResourceExplorer",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/resource-explorer-2.amazonaws.com/AWSServiceRoleForResourceExplorer",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForSupport",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/support.amazonaws.com/AWSServiceRoleForSupport",
+                "admin": false
+            },
+            {
+                "name": "AWSServiceRoleForTrustedAdvisor",
+                "arn": "arn:aws:iam::166208896669:role/aws-service-role/trustedadvisor.amazonaws.com/AWSServiceRoleForTrustedAdvisor",
+                "admin": false
+            },
+            {
+                "name": "poojadonkey-role-7bmqjmud",
+                "arn": "arn:aws:iam::166208896669:role/service-role/poojadonkey-role-7bmqjmud",
+                "admin": false
+            }
+        ]
+    }
+}

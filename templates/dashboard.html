@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CloudNet Sentinel | Security Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #050811;
+            --bg-card: #0d111d;
+            --border: #1a2234;
+            --text-primary: #f7fafc;
+            --text-secondary: #718096;
+            --accent-blue: #3182ce;
+            --danger: #e53e3e;
+            --warning: #dd6b20;
+            --success: #38a169;
+            --bg-hover: #161e2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text-primary); 
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* HEADER */
+        header { 
+            background: #000; 
+            border-bottom: 2px solid var(--border); 
+            padding: 0 2rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+        .logo { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+        }
+        .logo i { color: var(--accent-blue); }
+
+        .tab-bar { 
+            display: flex; 
+            background: #000; 
+            border-bottom: 1px solid var(--border); 
+            padding: 0 2rem;
+            height: 50px;
+            flex-shrink: 0;
+            z-index: 90;
+        }
+        .tab-btn { 
+            background: none; 
+            border: none; 
+            color: var(--text-secondary); 
+            padding: 0 1.5rem; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 0.75rem; 
+            border-bottom: 2px solid transparent; 
+            transition: 0.2s; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
+        .tab-btn.active { 
+            color: var(--accent-blue); 
+            border-bottom-color: var(--accent-blue); 
+            background: rgba(49, 130, 206, 0.05); 
+        }
+
+        main { 
+            flex-grow: 1;
+            overflow-y: auto; 
+            background: radial-gradient(circle at 50% 0%, rgba(49, 130, 206, 0.03) 0%, transparent 70%);
+        }
+        
+        .tab-content { display: none; padding: 2rem; animation: fadeIn 0.3s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* SHARED ELEMENTS */
+        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem; border-radius: 4px; margin-bottom: 1.5rem; }
+        .section-title { 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: var(--text-secondary); 
+            font-weight: 800; 
+            letter-spacing: 1.5px; 
+            margin-bottom: 1.25rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+
+        /* OVERVIEW COMPONENTS */
+        .status-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .status-box { background: var(--bg-card); border: 1px solid var(--border); padding: 1.25rem; border-radius: 4px; border-top: 3px solid var(--accent-blue); }
+        .status-label { font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .status-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; }
+        .val-CRITICAL { color: var(--danger); text-shadow: 0 0 10px rgba(229, 62, 62, 0.2); }
+        .val-EXPOSED { color: var(--warning); }
+        .overview-grid { display: grid; grid-template-columns: 300px 1fr 320px; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .mini-graph-container { 
+            background: #000; 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            height: 550px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 2rem; 
+        }
+
+        /* ASSET INTELLIGENCE STYLES */
+        .asset-container { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; height: calc(100vh - 180px); }
+        .asset-list-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; }
+        .asset-filters { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; }
+        .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 10px; font-size: 0.65rem; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+        .filter-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .asset-scroll { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+        .asset-item { padding: 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .asset-item:hover { background: var(--bg-hover); border-color: var(--accent-blue); }
+        .asset-item.active { background: rgba(49, 130, 206, 0.1); border-color: var(--accent-blue); }
+        .asset-item-type { font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+        .asset-item-id { font-size: 0.8rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .asset-detail-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 2rem; overflow-y: auto; }
+        .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .detail-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
+        .detail-value { font-size: 0.85rem; font-weight: 500; text-align: right; }
+        .detail-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+
+        .tag-high { background: rgba(229, 62, 62, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .tag-entry { background: rgba(49, 130, 206, 0.1); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .tag-target { background: rgba(56, 161, 105, 0.1); color: var(--success); border: 1px solid var(--success); }
+
+        /* ATTACK GRAPH TAB */
+
+        .chain-viz { display: flex; width: 100%; justify-content: space-between; align-items: center; max-width: 500px; margin-bottom: 3rem; }
+        .chain-point { 
+            width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border); 
+            display: flex; align-items: center; justify-content: center; font-size: 1rem; 
+            background: var(--bg-body); transition: 0.5s; position: relative;
+        }
+        .chain-point::after {
+            content: attr(title); position: absolute; bottom: -28px; font-size: 0.6rem; 
+            color: var(--text-secondary); white-space: nowrap; font-weight: 600; text-transform: uppercase;
+        }
+        .chain-point.done { border-color: var(--success); color: var(--success); background: rgba(56, 161, 105, 0.1); }
+        .chain-point.active { border-color: var(--warning); color: var(--warning); box-shadow: 0 0 15px rgba(221, 107, 32, 0.3); }
+        .chain-line { height: 2px; flex-grow: 1; background: var(--border); margin: 0 10px; transition: 0.5s; }
+        .chain-line.active { background: var(--success); }
+
+        .pos-card { 
+            padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); 
+            border-radius: 4px; font-size: 0.8rem; display: flex; align-items: center; gap: 12px; 
+        }
+        .pos-card.done { color: var(--success); border-left: 3px solid var(--success); }
+        .pos-card.blocked { color: var(--text-secondary); opacity: 0.5; border-left: 3px solid var(--border); }
+
+        .brutal-warning { 
+            color: var(--warning); background: rgba(221, 107, 32, 0.05); 
+            border-left: 3px solid var(--warning); padding: 1rem; font-size: 0.8rem; font-weight: 600; line-height: 1.5; 
+        }
+
+        .insight-strip { 
+            background: linear-gradient(90deg, rgba(49, 130, 206, 0.1) 0%, transparent 100%); 
+            border: 1px solid var(--accent-blue); padding: 1rem 1.5rem; border-radius: 4px; 
+            display: flex; align-items: center; gap: 15px; font-weight: 600; font-size: 0.85rem; 
+        }
+
+        /* ATTACK GRAPH TAB */
+        .graph-page-container { position: relative; height: calc(100vh - 160px); background: #000; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+        .graph-ui { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 10; }
+        .graph-ui button { 
+            background: rgba(0,0,0,0.8); border: 1px solid var(--border); color: #fff; 
+            padding: 8px 16px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border-radius: 4px; 
+            transition: 0.2s;
+        }
+        .graph-ui button.active { background: var(--accent-blue); border-color: var(--accent-blue); }
+
+        /* ACTIONS TAB */
+        .action-card { border-left: 4px solid var(--accent-blue); transition: 0.2s; margin-bottom: 1rem; }
+        .action-card:hover { transform: translateX(5px); background: var(--bg-hover); }
+        .priority-CRITICAL { border-left-color: var(--danger); }
+        .priority-HIGH { border-left-color: var(--warning); }
+        .badge { padding: 4px 8px; border-radius: 3px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; border: 1px solid transparent; }
+        .badge-high { background: rgba(229, 62, 62, 0.1); color: var(--danger); border-color: var(--danger); }
+        .badge-med { background: rgba(221, 107, 32, 0.1); color: var(--warning); border-color: var(--warning); }
+
+        /* LIVE FEED TAB */
+        .intelligence-table { width: 100%; border-collapse: collapse; }
+        .intelligence-table th { text-align: left; padding: 1rem; font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); letter-spacing: 1px; }
+        .intelligence-table td { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; }
+        
+        .tooltip { 
+            position: absolute; background: #000; border: 1px solid var(--accent-blue); 
+            padding: 10px; font-size: 0.7rem; pointer-events: none; z-index: 2000; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); font-family: 'JetBrains Mono', monospace; border-radius: 4px; color: #fff;
+        }
+
+        /* ATTACKER VIEW ENHANCEMENTS */
+        @keyframes marchingAnts {
+            from { stroke-dashoffset: 20; }
+            to { stroke-dashoffset: 0; }
+        }
+        .attack-link-anim {
+            stroke-dasharray: 6, 4;
+            animation: marchingAnts 1s linear infinite;
+            stroke: var(--danger) !important;
+            stroke-width: 4px !important;
+            filter: drop-shadow(0 0 8px var(--danger));
+            opacity: 1 !important;
+        }
+        .attack-node-glow {
+            filter: drop-shadow(0 0 12px var(--danger)) !important;
+            stroke: #fff !important;
+            stroke-width: 2px !important;
+            opacity: 1 !important;
+        }
+        .fade-node { opacity: 0.05 !important; }
+        .fade-link { opacity: 0.02 !important; }
+        .hidden-label { display: none !important; }
+
+        /* Tactical Narrative Overlay */
+        .attack-narrative-overlay {
+            position: absolute; bottom: 20px; left: 20px; width: 350px;
+            background: rgba(0, 0, 0, 0.85); border: 1px solid var(--danger);
+            border-radius: 4px; padding: 1.5rem; z-index: 100;
+            backdrop-filter: blur(10px); display: none;
+            box-shadow: 0 0 20px rgba(229, 62, 62, 0.2);
+        }
+        .narrative-step { font-size: 0.75rem; margin-bottom: 10px; line-height: 1.4; display: flex; gap: 10px; }
+        .narrative-step i { color: var(--danger); margin-top: 2px; }
+
+        @keyframes targetPulse {
+            0% { r: 12; filter: drop-shadow(0 0 10px var(--danger)); }
+            50% { r: 16; filter: drop-shadow(0 0 25px var(--danger)); }
+            100% { r: 12; filter: drop-shadow(0 0 10px var(--danger)); }
+        }
+        .target-node-pulse { animation: targetPulse 1.5s ease-in-out infinite; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><i class="bi bi-shield-lock-fill"></i> CloudNet Sentinel</div>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div id="scan-status" style="font-size: 0.65rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;">
+                <span style="color: var(--success);">●</span> SECURE CHANNEL ACTIVE
+            </div>
+            <a href="/logout" style="color: var(--text-secondary); text-decoration: none; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;"><i class="bi bi-power"></i> Logout</a>
+        </div>
+    </header>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+        <button class="tab-btn" onclick="showTab('assets-page')">Asset Intelligence</button>
+        <button class="tab-btn" onclick="showTab('graph-page')">Attack Graph</button>
+        <button class="tab-btn" onclick="showTab('actions-page')">Action & Prioritization</button>
+        <button class="tab-btn" onclick="showTab('finance-page')">Financial Blast Radius</button>
+        <button class="tab-btn" onclick="showTab('threats-page')">Live Threat Stream</button>
+    </div>
+
+    <main>
+        <!-- TAB 1: OVERVIEW (COMMAND CENTER) -->
+        <div id="overview" class="tab-content active">
+            <!-- Top Metric Bar -->
+            <div class="status-strip">
+                <div class="status-box">
+                    <div class="status-label">System State</div>
+                    <div class="status-value val-{{ intelligence.explanations.status }}">{{ intelligence.explanations.status }}</div>
+                </div>
+                <div class="status-box">
+                    <div class="status-label">Attack Progress</div>
+                    <div class="status-value" style="color: var(--warning); font-size: 0.95rem;">{{ intelligence.explanations.attack_progress_str }}</div>
+                </div>
+                <div class="status-box">
+                    <div class="status-label">Time to Compromise</div>
+                    <div class="status-value" style="color: var(--accent-blue);">{{ intelligence.explanations.time_to_compromise }}</div>
+                </div>
+                <div class="status-box">
+                    <div class="status-label">Analysis Confidence</div>
+                    <div class="status-value">{{ intelligence.explanations.confidence_score }}%</div>
+                </div>
+            </div>
+
+            <!-- Middle Grid -->
+            <div class="overview-grid">
+                <!-- Left: Attacker Position + Event Highlights -->
+                <div class="col">
+                    <div class="card">
+                        <div class="section-title"><i class="bi bi-geo-fill"></i> Attacker Position</div>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div class="pos-card {{ 'done' if intelligence.explanations.attacker_position.external_access else 'blocked' }}">
+                                <i class="bi {{ 'bi-check-circle-fill' if intelligence.explanations.attacker_position.external_access else 'bi-dash-circle' }}"></i>
+                                External Access Point Found
+                            </div>
+                            <div class="pos-card {{ 'done' if intelligence.explanations.attacker_position.privilege_escalation else 'blocked' }}">
+                                <i class="bi {{ 'bi-check-circle-fill' if intelligence.explanations.attacker_position.privilege_escalation else 'bi-dash-circle' }}"></i>
+                                Privilege Escalation Potential
+                            </div>
+                            <div class="pos-card {{ 'done' if intelligence.explanations.attacker_position.target_reachable else 'blocked' }}">
+                                <i class="bi {{ 'bi-check-circle-fill' if intelligence.explanations.attacker_position.target_reachable else 'bi-dash-circle' }}"></i>
+                                Sensitive Target Reachable
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="section-title"><i class="bi bi-lightning-charge"></i> Event Highlights</div>
+                        <div id="mini-feed" style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6;">
+                            No live events detected in current session.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Mini Graph (Static Chain Viz) -->
+                <div class="col">
+                    <div class="mini-graph-container">
+                        <div class="section-title" style="width: 100%; justify-content: center; margin-bottom: 3.5rem;">Primary Attack Vector Feasibility</div>
+                        <div class="chain-viz">
+                            <div class="chain-point {{ 'done' if intelligence.explanations.attacker_position.external_access else 'active' }}" 
+                                 title="Public Entry" style="cursor:pointer;" 
+                                 onclick="updateDecisionPanel('ENTRY_POINT')">
+                                <i class="bi bi-globe"></i>
+                            </div>
+                            <div class="chain-line {{ 'active' if intelligence.explanations.attacker_position.external_access }}"></div>
+                            <div class="chain-point {{ 'done' if intelligence.explanations.attacker_position.privilege_escalation else ('active' if intelligence.explanations.attacker_position.external_access else '') }}" 
+                                 title="Escalation" style="cursor:pointer;"
+                                 onclick="updateDecisionPanel('ESCALATION_NODE')">
+                                <i class="bi bi-cpu"></i>
+                            </div>
+                            <div class="chain-line {{ 'active' if intelligence.explanations.attacker_position.privilege_escalation }}"></div>
+                            <div class="chain-point {{ 'done' if intelligence.explanations.attacker_position.target_reachable else ('active' if intelligence.explanations.attacker_position.privilege_escalation else '') }}" 
+                                 title="Target Access" style="cursor:pointer;"
+                                 onclick="updateDecisionPanel('TARGET')">
+                                <i class="bi bi-database"></i>
+                            </div>
+                        </div>
+                        <div style="text-align: center; max-width: 400px; margin-top: 1rem;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 0.9rem; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px;">Intelligence Reasoning</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6; margin: 0;">{{ intelligence.explanations.summary }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Risk & Decisions & Why Care -->
+                <div class="col">
+                    <div class="card" style="border-left: 4px solid var(--danger);">
+                        <div class="section-title" style="color: var(--danger);"><i class="bi bi-graph-up-arrow"></i> Risk Trajectory</div>
+                        <div style="font-size: 0.85rem; line-height: 1.8;">
+                            <div style="color: var(--text-secondary); font-size: 0.65rem; margin-bottom: 2px;">CURRENT THREAT LEVEL</div>
+                            <div id="risk-state" style="font-weight: 700; color: var(--danger); margin-bottom: 12px; font-size: 1rem;">{{ intelligence.explanations.risk_trajectory.state }}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.65rem; margin-bottom: 2px;">ESCALATION PROBABILITY</div>
+                            <div id="risk-escalation" style="font-weight: 700; color: var(--warning); margin-bottom: 12px; font-size: 1rem;">{{ intelligence.explanations.risk_trajectory.escalation_chance }}</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="section-title"><i class="bi bi-exclamation-triangle"></i> Why care?</div>
+                        <p id="why-care-text" class="brutal-warning">
+                            Detected configurations allow an external actor to pivot from public instances into administrative roles, leading to full infrastructure takeover within minutes.
+                        </p>
+                    </div>
+                    <div class="card" style="background: rgba(49, 130, 206, 0.05); margin-bottom: 0;">
+                        <div class="section-title" style="color: var(--accent-blue);"><i class="bi bi-shield-check"></i> Primary Decision</div>
+                        <p id="decision-text" style="font-size: 0.8rem; line-height: 1.5; margin: 0;">
+                            {{ intelligence.explanations.decision_strip or "System remains within operational security bounds." }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Insights Strip -->
+            <div class="insight-strip">
+                <i class="bi bi-robot" style="color: var(--accent-blue); font-size: 1.2rem;"></i>
+                <span>Automated analysis complete: Identified {{ intelligence.explanations.top_fixes|length }} high-impact remediation points across the graph. View the 'Action' tab for playbooks.</span>
+            </div>
+            </div>
+
+            <!-- 2. ASSET INTELLIGENCE -->
+            <div id="assets-page" class="tab-content">
+            <div class="asset-container">
+                <div class="asset-list-panel">
+                    <div class="asset-filters">
+                        <button class="filter-btn active" onclick="filterAssets('all')">All</button>
+                        <button class="filter-btn" onclick="filterAssets('exposed')">Exposed</button>
+                        <button class="filter-btn" onclick="filterAssets('in_path')">In Attack Path</button>
+                        <button class="filter-btn" onclick="filterAssets('high_risk')">High Risk</button>
+                    </div>
+                    <div class="asset-scroll">
+                        {% for asset in intelligence.assets %}
+                        <div class="asset-item" 
+                             data-type="{{ asset.resource_type }}" 
+                             data-exposed="{{ 'true' if asset.exposure_status == 'public' else 'false' }}"
+                             data-path="{{ 'true' if asset.attack_role != 'SECURE_NODE' else 'false' }}"
+                             data-risk="{{ asset.risk_level }}"
+                             onclick="selectAsset('{{ asset.resource_id }}')">
+                            <div class="asset-item-type">{{ asset.resource_type }}</div>
+                            <div class="asset-item-id">{{ asset.resource_id }}</div>
+                            <div style="display: flex; gap: 5px; margin-top: 8px;">
+                                {% if asset.exposure_status == 'public' %}<span class="badge badge-high" style="font-size: 0.5rem; padding: 2px 4px;">EXPOSED</span>{% endif %}
+                                {% if asset.attack_role != 'SECURE_NODE' %}<span class="badge badge-med" style="font-size: 0.5rem; padding: 2px 4px;">IN PATH</span>{% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="asset-detail-panel" id="asset-details-content">
+                    <div style="text-align: center; color: var(--text-secondary); margin-top: 100px;">
+                        <i class="bi bi-cursor-fill" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+                        <p>Select a resource from the list to view its role in the attack graph.</p>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- TAB 2: ATTACK GRAPH (FULL VISUALIZATION) -->
+            <div id="graph-page" class="tab-content">
+                <div class="graph-page-container">
+                    <div class="graph-ui">
+                        <button id="btn-normal" class="active" onclick="setGraphMode('normal')">Architect View</button>
+                        <button id="btn-attacker" onclick="setGraphMode('attacker')">Attacker View</button>
+                    </div>
+                    <div class="attack-narrative-overlay" id="narrative-overlay">
+                        <div class="section-title" style="color: var(--danger);"><i class="bi bi-shield-exclamation"></i> Breach Simulation Narrative</div>
+                        <div id="narrative-content"></div>
+                    </div>
+                    <div id="full-graph-container" style="height: 100%; width: 100%;"></div>
+                    <div id="tooltip" class="tooltip" style="display: none;"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: ACTION & PRIORITIZATION -->
+        <div id="actions-page" class="tab-content">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="section-title" style="font-size: 1.2rem; color: var(--text-primary); margin-bottom: 0.5rem; text-transform: none;">REMEDIATION PLAYBOOK</div>
+                <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 0.9rem;">Ranked by multi-hop traversal feasibility and potential financial blast radius.</p>
+                
+                {% for fix in intelligence.explanations.top_fixes %}
+                <div class="card action-card priority-{{ fix.priority }}">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <span class="badge {{ 'badge-high' if fix.priority in ['CRITICAL', 'HIGH'] else 'badge-med' }}">{{ fix.priority }} Priority</span>
+                            <h3 style="margin: 8px 0 0 0; font-size: 1.1rem;">{{ fix.resource }}</h3>
+                        </div>
+                        <i class="bi bi-tools" style="font-size: 1.2rem; color: var(--accent-blue);"></i>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;"><strong>REASON:</strong> {{ fix.reason }}</p>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 1rem; border-radius: 4px;">
+                        <div style="font-size: 0.6rem; text-transform: uppercase; font-weight: 800; color: var(--accent-blue); margin-bottom: 6px;">Recommended Fix</div>
+                        <div style="font-weight: 600; font-size: 0.85rem;"><i class="bi bi-check2-circle" style="color: var(--success);"></i> {{ fix.fix }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not intelligence.explanations.top_fixes %}
+                <div class="card" style="text-align: center; padding: 4rem; color: var(--text-secondary);">
+                    <i class="bi bi-shield-check" style="font-size: 3rem; color: var(--success); margin-bottom: 1rem; display: block;"></i>
+                    <p>No critical remediation steps required. System is currently hardened.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- TAB 4: FINANCIAL BLAST RADIUS -->
+        <div id="finance-page" class="tab-content">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="card" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(229, 62, 62, 0.05) 0%, transparent 100%); padding: 2rem;">
+                    <div class="section-title" style="color: var(--danger);"><i class="bi bi-cash-coin"></i> Financial Security Narrative</div>
+                    <p style="font-size: 1.1rem; line-height: 1.8; white-space: pre-line; color: var(--text-primary); margin: 0;">{{ intelligence.cost.narrative }}</p>
+                </div>
+
+                <div class="status-strip">
+                    <div class="status-box">
+                        <div class="status-label">Operational Spend (MTD)</div>
+                        <div class="status-value">${{ intelligence.cost.current_cost }}</div>
+                    </div>
+                    <div class="status-box">
+                        <div class="status-label">Projected Month End</div>
+                        <div class="status-value">${{ intelligence.cost.forecast_cost }}</div>
+                    </div>
+                    <div class="status-box" style="border-top-color: var(--danger);">
+                        <div class="status-label">Simulated Attack Spike</div>
+                        <div class="status-value val-CRITICAL">${{ intelligence.cost.simulated_attack_cost if intelligence.attack_paths else intelligence.cost.hypothetical_attack_cost }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: LIVE THREAT STREAM -->
+        <div id="threats-page" class="tab-content">
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div style="padding: 1.5rem 1.5rem 0 1.5rem;">
+                    <div class="section-title"><i class="bi bi-activity"></i> Intelligence Feed</div>
+                </div>
+                <table class="intelligence-table">
+                    <thead>
+                        <tr>
+                            <th width="120">Severity</th>
+                            <th width="160">Time</th>
+                            <th>Threat Intelligence Event</th>
+                            <th width="200">Affected Resource</th>
+                            <th width="180">Graph Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody id="full-event-log">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 5rem;">
+                                <i class="bi bi-broadcast bi-spin" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                                Initializing telemetry listeners...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const intelligence = {{ intelligence | tojson }};
+        let currentGraphMode = 'normal';
+        let svg, g, link, node, simulation;
+
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+            if (id === 'graph-page') {
+                setTimeout(initFullGraph, 100);
+            }
+        }
+
+        // ASSET INTELLIGENCE FUNCTIONS
+        function filterAssets(filter) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            document.querySelectorAll('.asset-item').forEach(item => {
+                const exposed = item.getAttribute('data-exposed') === 'true';
+                const inPath = item.getAttribute('data-path') === 'true';
+                const risk = item.getAttribute('data-risk');
+                
+                let show = false;
+                if (filter === 'all') show = true;
+                else if (filter === 'exposed') show = exposed;
+                else if (filter === 'in_path') show = inPath;
+                else if (filter === 'high_risk') show = (risk === 'HIGH');
+                
+                item.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        function selectAsset(id) {
+            document.querySelectorAll('.asset-item').forEach(i => i.classList.remove('active'));
+            const item = Array.from(document.querySelectorAll('.asset-item')).find(i => i.innerHTML.includes(id));
+            if (item) item.classList.add('active');
+
+            const asset = intelligence.assets.find(a => a.resource_id === id);
+            if (!asset) return;
+
+            const content = document.getElementById('asset-details-content');
+            
+            const roleClass = asset.attack_role === 'ENTRY_POINT' ? 'tag-entry' : (asset.attack_role === 'TARGET' ? 'tag-target' : 'tag-high');
+            const riskClass = asset.risk_level === 'HIGH' ? 'val-CRITICAL' : 'val-SECURE';
+
+            content.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2 style="margin: 0; font-size: 1.5rem; font-family:'JetBrains Mono';">${asset.resource_id}</h2>
+                    <span class="detail-tag ${roleClass}">${asset.attack_role}</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="section-title">Attack Graph Mapping</div>
+                        <div class="detail-row"><span class="detail-label">Exposure Status</span><span class="detail-value" style="text-transform: capitalize;">${asset.exposure_status}</span></div>
+                        <div class="detail-row"><span class="detail-label">Risk Level</span><span class="detail-value ${riskClass}">${asset.risk_level}</span></div>
+                        <div class="detail-row"><span class="detail-label">Blast Radius Score</span><span class="detail-value" style="color:var(--warning); font-weight:800;">${asset.blast_radius_score} / 100</span></div>
+                    </div>
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="section-title">Security Posture</div>
+                        <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">${asset.resource_type}</span></div>
+                        <div class="detail-row"><span class="detail-label">Vulnerabilities</span><span class="detail-value" style="color:var(--danger);">${asset.vulnerabilities.length || 'None'}</span></div>
+                        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:var(--success);">Hardened</span></div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="section-title">Graph Connectivity</div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">This asset acts as a bridge to the following graph nodes:</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        ${asset.connected_nodes.length ? asset.connected_nodes.map(n => `<span class="badge" style="background: var(--border); border-color:var(--accent-blue); cursor:pointer;" onclick="selectAsset('${n}')">${n}</span>`).join('') : '<span style="color:var(--text-secondary); font-size:0.8rem;">Isolated Node</span>'}
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-blue); background: linear-gradient(90deg, rgba(49, 130, 206, 0.05) 0%, transparent 100%);">
+                    <div class="section-title">Intelligence Recommendation</div>
+                    <p style="font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6;">${asset.recommended_fix}</p>
+                    <div style="background: rgba(49, 130, 206, 0.1); padding: 1rem; border-radius: 4px; font-size: 0.8rem;">
+                        <strong>EXPLOTATION IMPACT:</strong> ${asset.attack_role === 'ENTRY_POINT' ? 'Gains initial beachhead in VPC.' : (asset.attack_role === 'TARGET' ? 'Direct exfiltration of sensitive cloud data.' : 'Allows horizontal movement across the environment.')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightEventNode(nodeId, message) {
+            showTab('graph-page');
+            setTimeout(() => {
+                if (!node) return;
+                node.style("filter", d => d.id === nodeId ? "drop-shadow(0 0 20px #fff)" : "none");
+                node.style("opacity", d => d.id === nodeId ? 1 : 0.1);
+                link.style("opacity", 0.05);
+
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'block';
+                tooltip.style.left = '50%';
+                tooltip.style.top = '100px';
+                tooltip.style.transform = 'translateX(-50%)';
+                tooltip.innerHTML = `<div style="text-align:center; padding: 10px;">
+                    <div style="color:var(--danger); font-weight:800; margin-bottom: 5px;">THREAT CORRELATION</div>
+                    <div>${message}</div>
+                    <button onclick="setGraphMode('normal')" style="margin-top: 10px; background: var(--accent-blue); border:none; color:white; padding:4px 10px; font-size: 10px; cursor:pointer; border-radius:3px;">RESET VIEW</button>
+                </div>`;
+            }, 200);
+        }
+
+        function updateDecisionPanel(role) {
+            const riskState = document.getElementById('risk-state');
+            const riskEscalation = document.getElementById('risk-escalation');
+            const whyCare = document.getElementById('why-care-text');
+            const decision = document.getElementById('decision-text');
+
+            const assets = intelligence.assets.filter(a => a.attack_role === role);
+            if (assets.length === 0) return;
+
+            const topAsset = assets[0];
+            
+            if (role === 'ENTRY_POINT') {
+                riskState.innerText = "EXPOSED PERIMETER";
+                riskEscalation.innerText = "HIGH (Initial Access)";
+                whyCare.innerText = `Resource ${topAsset.resource_id} is world-reachable. This is the primary bridgehead for all multi-hop attacks detected in this environment.`;
+                decision.innerText = `Terminating ${topAsset.resource_id} ingress will reduce the environment attack surface by 100%.`;
+            } else if (role === 'ESCALATION_NODE') {
+                riskState.innerText = "PRIVILEGE ESCALATION";
+                riskEscalation.innerText = "CRITICAL (Lateral Movement)";
+                whyCare.innerText = `Identity ${topAsset.resource_id} has administrative rights. An attacker on an entry-node can hijack this role to take full account control.`;
+                decision.innerText = `Applying least-privilege to ${topAsset.resource_id} breaks the transitive path between entry and data.`;
+            } else if (role === 'TARGET') {
+                riskState.innerText = "DATA EXFILTRATION RISK";
+                riskEscalation.innerText = "IMMEDIATE (Impact Phase)";
+                whyCare.innerText = `Resource ${topAsset.resource_id} is the final target. Current paths allow an external actor to read/write sensitive data.`;
+                decision.innerText = `Enabling Public Access Block on ${topAsset.resource_id} protects the data even if identities are compromised.`;
+            }
+            
+            // Visual feedback
+            const col = document.querySelector('.overview-grid .col:last-child');
+            col.style.opacity = '0.5';
+            setTimeout(() => col.style.opacity = '1', 100);
+        }
+
+        function setGraphMode(mode) {
+            currentGraphMode = mode;
+            document.querySelectorAll('.graph-ui button').forEach(b => b.classList.remove('active'));
+            if(mode === 'attacker') document.getElementById('btn-attacker').classList.add('active');
+            else document.getElementById('btn-normal').classList.add('active');
+            updateGraphVisibility();
+        }
+
+        function updateGraphVisibility() {
+            if (!node || !link) return;
+            const paths = intelligence.attack_paths || [];
+            const pathNodeIds = new Set(paths.flat());
+            const targets = new Set(paths.map(p => p[p.length - 1]));
+            const narrativeOverlay = document.getElementById('narrative-overlay');
+            const narrativeContent = document.getElementById('narrative-content');
+            
+            if (currentGraphMode === 'attacker') {
+                // FADE non-attack elements
+                node.classed("fade-node", d => d.id !== "Internet" && !pathNodeIds.has(d.id));
+                node.select("text").classed("hidden-label", d => d.id !== "Internet" && !pathNodeIds.has(d.id));
+                
+                link.classed("fade-link", d => {
+                    const s = d.source.id || d.source;
+                    const t = d.target.id || d.target;
+                    return !paths.some(p => {
+                        for(let i=0; i<p.length-1; i++) if(p[i] === s && p[i+1] === t) return true;
+                        return false;
+                    });
+                });
+
+                // ANIMATE attack paths
+                link.classed("attack-link-anim", d => {
+                    const s = d.source.id || d.source;
+                    const t = d.target.id || d.target;
+                    return paths.some(p => {
+                        for(let i=0; i<p.length-1; i++) if(p[i] === s && p[i+1] === t) return true;
+                        return false;
+                    });
+                });
+
+                node.classed("attack-node-glow", d => pathNodeIds.has(d.id));
+                node.select("circle").classed("target-node-pulse", d => targets.has(d.id));
+
+                // Populate Narrative
+                if (intelligence.reasoning.narrative) {
+                    narrativeOverlay.style.display = 'block';
+                    narrativeContent.innerHTML = intelligence.reasoning.narrative.map(step => `
+                        <div class="narrative-step"><i class="bi bi-caret-right-fill"></i> ${step}</div>
+                    `).join('');
+                }
+            } else {
+                // RESET Architect View
+                node.classed("fade-node", false);
+                node.select("text").classed("hidden-label", false);
+                link.classed("fade-link", false);
+                link.classed("attack-link-anim", false);
+                node.classed("attack-node-glow", false);
+                node.select("circle").classed("target-node-pulse", false);
+                node.style("opacity", 1);
+                link.style("opacity", 1);
+                narrativeOverlay.style.display = 'none';
+            }
+        }
+
+        function initFullGraph() {
+            const data = JSON.parse(JSON.stringify(intelligence.graph)); 
+            const container = document.getElementById('full-graph-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const tooltip = document.getElementById('tooltip');
+
+            svg = d3.select("#full-graph-container").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+            
+            g = svg.append("g");
+            
+            svg.call(d3.zoom().on("zoom", (e) => g.attr("transform", e.transform)));
+
+            simulation = d3.forceSimulation(data.nodes)
+                .force("link", d3.forceLink(data.edges).id(d => d.id).distance(150))
+                .force("charge", d3.forceManyBody().strength(-800))
+                .force("center", d3.forceCenter(width / 2, height / 2));
+
+            const attackPaths = intelligence.attack_paths || [];
+            function isAttackEdge(s, t) {
+                return attackPaths.some(p => {
+                    for(let i=0; i<p.length-1; i++) if(p[i] === s && p[i+1] === t) return true;
+                    return false;
+                });
+            }
+
+            link = g.append("g")
+                .selectAll("line")
+                .data(data.edges)
+                .join("line")
+                .attr("stroke", d => isAttackEdge(d.source.id || d.source, d.target.id || d.target) ? "#f56565" : "rgba(255,255,255,0.1)")
+                .attr("stroke-width", d => isAttackEdge(d.source.id || d.source, d.target.id || d.target) ? 5 : 2);
+
+            node = g.append("g")
+                .selectAll("g")
+                .data(data.nodes)
+                .join("g")
+                .style("cursor", "pointer")
+                .on("click", (e, d) => {
+                    const asset = intelligence.assets.find(a => a.resource_id === d.id);
+                    if (asset) {
+                        updateDecisionPanel(asset.attack_role);
+                        showTab('overview');
+                    }
+                })
+                .call(d3.drag()
+                    .on("start", e => { if(!e.active) simulation.alphaTarget(0.3).restart(); e.subject.fx = e.x; e.subject.fy = e.y; })
+                    .on("drag", e => { e.subject.fx = e.x; e.subject.fy = e.y; })
+                    .on("end", e => { if(!e.active) simulation.alphaTarget(0); e.subject.fx = null; e.subject.fy = null; }));
+
+            node.append("circle")
+                .attr("r", d => d.type === "vpc" ? 18 : (d.type === "subnet" ? 15 : 12))
+                .attr("fill", d => {
+                    if(d.id === "Internet") return "#f56565";
+                    if(d.type === "vpc") return "#3182ce";
+                    if(d.type === "subnet") return "#4299e1";
+                    if(d.type === "ec2" && d.public) return "#ed8936";
+                    if(d.type === "iam" && d.is_admin) return "#9f7aea";
+                    return "#48bb78";
+                })
+                .style("filter", d => (d.risk === "HIGH") ? "drop-shadow(0 0 10px rgba(245, 101, 101, 0.4))" : "none");
+
+            node.append("text")
+                .text(d => d.label)
+                .attr("x", 18)
+                .attr("y", 5)
+                .attr("fill", "#fff")
+                .style("font-size", "11px")
+                .style("font-weight", "600")
+                .style("pointer-events", "none");
+
+            node.on("mouseover", (e, d) => {
+                tooltip.style.display = 'block';
+                tooltip.innerHTML = `<strong>${d.label}</strong><br><span style="color:var(--text-secondary)">${d.reason || 'Cloud Resource'}</span>`;
+            }).on("mousemove", (e) => {
+                tooltip.style.left = (e.pageX + 15) + 'px';
+                tooltip.style.top = (e.pageY - 20) + 'px';
+            }).on("mouseout", () => tooltip.style.display = 'none');
+
+            simulation.on("tick", () => {
+                link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+            
+            updateGraphVisibility();
+        }
+
+        function pollEvents() {
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    const fullLog = document.getElementById('full-event-log');
+                    const miniFeed = document.getElementById('mini-feed');
+                    if (!fullLog || !miniFeed || events.length === 0) return;
+                    const sorted = [...events].reverse();
+                    
+                    fullLog.innerHTML = '';
+                    sorted.forEach(ev => {
+                        const row = document.createElement('tr');
+                        row.style.cursor = 'pointer';
+                        row.onclick = () => highlightEventNode(ev.event.node, ev.impact_message);
+                        
+                        const sevClass = ev.event.severity === 'HIGH' || ev.event.severity === 'CRITICAL' ? 'badge-high' : 'badge-med';
+                        
+                        row.innerHTML = `
+                            <td><span class="badge ${sevClass}">${ev.event.severity}</span></td>
+                            <td style="color:var(--text-secondary); font-family:'JetBrains Mono'; font-size:0.7rem;">${ev.event.timestamp}</td>
+                            <td><strong>${ev.event.event_type}</strong>: ${ev.event.message}</td>
+                            <td><code>${ev.event.node.split('/').pop()}</code></td>
+                            <td><span style="color:${ev.status === 'ACTIVE ATTACK' ? 'var(--danger)' : 'var(--text-secondary)'}">${ev.impact_type}</span></td>
+                        `;
+                        fullLog.appendChild(row);
+                    });
+
+                    miniFeed.innerHTML = '';
+                    sorted.slice(0, 3).forEach(ev => {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '12px';
+                        div.style.cursor = 'pointer';
+                        div.onclick = () => highlightEventNode(ev.event.node, ev.impact_message);
+                        const dotColor = (ev.event.severity === 'HIGH' || ev.event.severity === 'CRITICAL') ? 'var(--danger)' : 'var(--warning)';
+                        div.innerHTML = `<span style="color: ${dotColor}">●</span> ${ev.event.message}`;
+                        miniFeed.appendChild(div);
+                    });
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setInterval(pollEvents, 3000);
+            pollEvents();
+        });
+    </script>
+</body>
+</html>

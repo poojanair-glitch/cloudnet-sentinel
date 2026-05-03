@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudNet Sentinel | Advanced Cloud Security Graph</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg-deep: #0b1220;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --grid-color: rgba(56, 189, 248, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Ambient Glows */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .glow-1 { top: -200px; left: -200px; }
+        .glow-2 { bottom: -200px; right: -200px; }
+
+        /* Navigation Bar */
+        nav {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+        .nav-logo i { color: var(--accent-blue); }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .nav-links a { text-decoration: none; color: inherit; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--accent-blue); }
+
+        /* Hero Section */
+        .hero {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-title {
+            font-size: 5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+        }
+
+        .hero-title span {
+            color: var(--accent-blue);
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            line-height: 1.6;
+            margin-bottom: 48px;
+            font-weight: 400;
+        }
+
+        .btn-cta {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #0ea5e9 100%);
+            color: white;
+            padding: 18px 48px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(56, 189, 248, 0.4);
+            filter: brightness(1.1);
+        }
+
+        /* Features Row */
+        .features-row {
+            display: flex;
+            gap: 60px;
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .feature-item i {
+            color: var(--accent-blue);
+            font-size: 1.25rem;
+        }
+
+        /* Scanning Line Animation */
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+            opacity: 0.2;
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 3rem; }
+            .features-row { flex-direction: column; gap: 20px; }
+            nav { padding: 0 5%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="scan-line"></div>
+
+    <nav>
+        <div class="nav-logo">
+            <i class="bi bi-shield-lock-fill"></i>
+            CLOUD NET SENTINEL
+        </div>
+    </nav>
+
+    <main class="hero">
+        <h1 class="hero-title">Cloud Net <span>Sentinel</span></h1>
+        <p class="hero-subtitle">
+            Harness graph-based deep analysis to identify hidden attack paths, trace transitive risks, and secure your AWS infrastructure.
+        </p>
+
+        <a href="/login-screen" class="btn-cta">
+            Start Scan <i class="bi bi-arrow-right"></i>
+        </a>
+
+        <div class="features-row">
+            <div class="feature-item">
+                <i class="bi bi-diagram-3"></i> Graph Intelligence
+            </div>
+            <div class="feature-item">
+                <i class="bi bi-shield-check"></i> Risk Rating
+            </div>
+            <div class="feature-item">
+                <i class="bi bi-radar"></i> Attack Path Detection
+            </div>
+        </div>
+    </main>
+</body>
+</html>
